@@ -6125,11 +6125,11 @@ const mix=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i
 
 let X=null; // åpen øvingsside: 'az' | 'bygg' | null
 const XN={az:'Grammatikk A–Å',bygg:'Bygg setningen'};
-function nav(){return `<div class="gp-top"><button class="btn gp-home" type="button" data-home>← Tilbake til kapittel ${S.ch}</button></div>
+function nav(){return `<div class="gp-top"><button class="btn gp-home" type="button" data-home>${ctx&&ctx.back?ctx.back.label:'← Tilbake til kapittel '+S.ch}</button></div>
  <div class="gp-nav" role="group" aria-label="Øv på tvers av kapitlene">${Object.entries(XN).map(([k,l])=>`<button type="button" data-gpm="${k}" aria-pressed="${X===k}">${l}</button>`).join('')}</div>`}
 function render(){
  V$().innerHTML=nav()+'<div id="gpBody"></div>';
- V$().querySelector('[data-home]').onclick=close;
+ V$().querySelector('[data-home]').onclick=()=>ctx&&ctx.back?ctx.back.go():close();
  V$().querySelectorAll('[data-gpm]').forEach(b=>b.onclick=()=>open(b.dataset.gpm));
  X==='bygg'?builder():az();
 }
@@ -6369,44 +6369,181 @@ window.GP={install(c){ctx=c;
 <script>
 (function(){
   const GUIDES={"h12": [1, 2], "h34": [3, 4], "h56": [5, 6], "h78": [7, 8], "h910": [9, 10], "h1113": [11, 12, 13]};
-  const TITLES={1:'Et land langt mot nord',2:'Dagligliv',3:'Et flerkulturelt samfunn',4:'Skole og høyere utdanning',5:'Arbeidsliv',6:'Klima og miljø',7:'Helsa vår',8:'Litt norsk historie',9:'Nasjonsbyggingen',10:'Noen norske kunstnere',11:'Maktfordelingen',12:'Politikk',13:'Internasjonale forhold'};
+  const CFG={"name": "Her på berget", "key": "hpb-app:last", "home": "index.html", "sub": "Nivå A2–B1 · 13 kapitler om Norge med tekster, ord, grammatikk, arbeidsbok og quiz.", "titles": {"1": "Et land langt mot nord", "2": "Dagligliv", "3": "Et flerkulturelt samfunn", "4": "Skole og høyere utdanning", "5": "Arbeidsliv", "6": "Klima og miljø", "7": "Helsa vår", "8": "Litt norsk historie", "9": "Nasjonsbyggingen", "10": "Noen norske kunstnere", "11": "Maktfordelingen", "12": "Politikk", "13": "Internasjonale forhold"}, "foot": "Nivå B1? Prøv <a href=\"stein-pa-stein.html\">Stein på stein</a>. Helt ny i norsk? Prøv <a href=\"lar-norsk.html\">Lær Norsk</a>."};
+  const HOME=CFG.home; // link to the site start page (null inside Claude)
+  const TITLES=CFG.titles;
   const TABS=['tekster','ord','grammatikk','arbeidsbok','ov'];
-  const KEY='hpb-app:last';
+  const TABN={tekster:'Tekstene',ord:'Ord',grammatikk:'Grammatikk',arbeidsbok:'Arbeidsbok',ov:'Øv'};
+  const XN={az:'Grammatikk A–Å',bygg:'Bygg setningen'};
+  const SCORED=['match','gap','type','error','tf','pick','listen'];
+  const KEY=CFG.key;
   const get=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}};
-  const put=v=>{try{localStorage.setItem(KEY,JSON.stringify(v))}catch(e){}};
+  const put=v=>{try{localStorage.setItem(KEY,JSON.stringify(Object.assign(get(),v)))}catch(e){}};
   const gidOf=c=>Object.keys(GUIDES).find(g=>GUIDES[g].includes(c));
-  const xm=location.hash.match(/^#tema-(az|bygg)$/),X0=xm?xm[1]:null;
-  let m=location.hash.match(/^#k(\d+)-(\w+)$/);
-  let ch=m&&gidOf(+m[1])?+m[1]:(get().ch||1), tab=m&&TABS.includes(m[2])?m[2]:(get().tab||'tekster');
-  if(!gidOf(ch))ch=1;
-  history.replaceState(null,'','#k'+ch+'-'+tab);
+  const NCH=Object.keys(TITLES).map(Number).filter(gidOf);
+  const parse=h=>{let m=h.match(/^#k(\d+)-(\w+)$/);if(m&&gidOf(+m[1])&&TABS.includes(m[2]))return{v:'ch',ch:+m[1],tab:m[2]};
+    m=h.match(/^#k(\d+)$/);if(m&&gidOf(+m[1]))return{v:'ch',ch:+m[1],tab:'tekster'};
+    m=h.match(/^#tema-(az|bygg)$/);if(m)return{v:'x',x:m[1]};return{v:'home'}};
+
+  // ---------- styles for the chapter list and chapter navigation ----------
+  document.head.insertAdjacentHTML('beforeend',`<style>
+  #home{display:none}
+  body.home-v #home{display:block}
+  body.home-v #app{display:none}
+  .hm{max-width:720px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 18px) max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+  .hm-up{display:inline-block;font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;padding:6px 0;margin-bottom:6px}
+  .hm-up:hover{color:var(--ink)}
+  .hm h1{font-family:var(--display);font-weight:800;font-size:clamp(32px,8.5vw,44px);letter-spacing:-.02em;line-height:1.05;margin:4px 0 6px;color:var(--ink)}
+  .hm-sub{color:var(--muted);margin:0 0 20px}
+  .hm-go{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px 18px;margin:0 0 22px;border:1px solid transparent;border-radius:16px;background:var(--k8-soft);color:var(--k8);cursor:pointer;font:inherit}
+  .hm-go b{display:block;font-family:var(--display);font-size:18px}
+  .hm-go span{display:block;font-size:14px;opacity:.85}
+  .hm-go i{font-style:normal;font-size:26px;margin-left:auto}
+  .hm-go:focus-visible,.hm-card:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .hm h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;margin:0 0 10px;font-family:inherit}
+  .hm-list{display:grid;gap:10px;margin:0 0 26px;padding:0;list-style:none}
+  @media (min-width:620px){.hm-list{grid-template-columns:1fr 1fr}}
+  .hm-card{display:flex;gap:14px;align-items:center;width:100%;height:100%;text-align:left;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;color:var(--ink);text-decoration:none;font:inherit;cursor:pointer;transition:border-color .15s}
+  .hm-card:hover{border-color:var(--c)}
+  .hm-n{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--cs);color:var(--c);font-family:var(--display);font-weight:800;font-size:18px}
+  .hm-t{flex:1;min-width:0}
+  .hm-t b{display:block;font-family:var(--display);font-weight:700;font-size:17px;line-height:1.25}
+  .hm-t small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+  .hm-bar{height:5px;border-radius:3px;background:var(--sunk);margin-top:8px;overflow:hidden}
+  .hm-bar i{display:block;height:100%;background:var(--c);border-radius:3px}
+  .hm-card .chev{flex:none;color:var(--muted);font-size:22px}
+  .hm-x .hm-n{font-size:15px}
+  .hm-foot{font-size:14px;color:var(--muted);margin:8px 0 0}
+  .hm-foot a{color:var(--k8,#1D4E89);font-weight:600}
+  .appback{display:inline-block;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;padding:2px 0}
+  .appback:hover{color:var(--ink)}
+  .apptitle{font-family:var(--display);font-weight:800;font-size:19px;line-height:1.2;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @media (max-width:640px){.apptitle{font-size:17px}}
+  .chnav{display:flex;gap:10px;margin:28px 0 0}
+  .chnav a{flex:1 1 0;min-width:0;display:block;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none}
+  .chnav a:hover{border-color:var(--ch)}
+  .chnav a.nx{text-align:right}
+  .chnav small{display:block;font-size:12px;color:var(--muted);font-weight:600}
+  .chnav b{display:block;font-family:var(--display);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chnav .sp{flex:1 1 0}
+  body.gp-x .chnav{display:none}
+  </style>`);
+
+  // ---------- pick the guide to mount ----------
+  const r0=parse(location.hash), last=get();
+  let ch=r0.v==='ch'?r0.ch:(gidOf(last.ch)?last.ch:NCH[0]);
+  let tab=r0.v==='ch'?r0.tab:(TABS.includes(last.tab)?last.tab:'tekster');
+  if(r0.v!=='home')history.replaceState(null,'',r0.v==='ch'?'#k'+ch+'-'+tab:location.hash);
+  else if(location.hash)history.replaceState(null,'',location.pathname+location.search);
   const gid=gidOf(ch);
-  // mount the guide that holds this chapter
+  // the guide reads the hash on start; give it this chapter, then restore the url
+  const realUrl=location.href;
+  history.replaceState(null,'','#k'+ch+'-'+tab);
   const app=document.getElementById('app');
   app.innerHTML=document.getElementById(gid).innerHTML;
   app.querySelectorAll('script').forEach(old=>{const s=document.createElement('script');s.textContent=old.textContent;old.replaceWith(s)});
-  // chapter menu in the header
-  const brand=app.querySelector('.brand');
-  brand.innerHTML=`<label class="appch"><span class="appch-l">Kapittel</span><select id="appSel" aria-label="Velg kapittel eller øving"><optgroup label="Kapitler">${Object.keys(TITLES).map(c=>`<option value="${c}"${gidOf(+c)?'':' disabled'}>${c} · ${TITLES[c]}${gidOf(+c)?'':' (kommer)'}</option>`).join('')}</optgroup>${window.GP?'<optgroup label="Øv på tvers av kapitlene"><option value="az">Grammatikk A–Å</option><option value="bygg">Bygg setningen</option></optgroup>':''}</select></label>`;
-  const sel=document.getElementById('appSel');
+  history.replaceState(null,'',realUrl);
+
   const cur=()=>{try{return S.ch}catch(e){return ch}};
   const curTab=()=>{try{return S.tab}catch(e){return tab}};
-  sel.value=String(cur());
-  sel.onchange=()=>{if(window.GP&&/^(az|bygg)$/.test(sel.value)){GP.open(sel.value);return}const c=+sel.value;put({ch:c,tab:curTab()});
-    if(gidOf(c)===gid){go(c,curTab());window.scrollTo(0,0)}
-    else{location.hash='#k'+c+'-'+curTab();location.reload()}};
+  const goGuide=(c,t)=>{try{go(c,t)}catch(e){}};
+
+  // ---------- progress (stored per chapter so the list can show all of them) ----------
+  function progress(){
+    const p=get().prog||{};
+    try{for(const c of GUIDES[gid]){
+      const vw=(VOCAB[c]||[]),known=vw.filter(w=>S.known[c+w[0]]).length;
+      const wl=(WB[c]||[]).filter(x=>SCORED.includes(x.kind)),done=wl.filter(x=>S.wb[x.id]).length;
+      p[c]=[known,vw.length,done,wl.length];
+    }}catch(e){}
+    return p;
+  }
+  const save=()=>{const o={prog:progress()};if(!document.body.classList.contains('home-v')){const x=window.GP&&GP.mode();if(x)o.x=x;else{o.ch=cur();o.tab=curTab();o.x=null}}put(o)};
+
+  // ---------- chapter header: back link + title (replaces the old dropdown) ----------
+  const brand=app.querySelector('.brand');
+  brand.innerHTML=`<a class="appback" href="#" id="appBack">‹ Alle kapitler</a><div class="apptitle" id="appTitle"></div>`;
+  const view=document.getElementById('view');
+  view.insertAdjacentHTML('afterend','<nav class="chnav" id="chnav" aria-label="Forrige og neste kapittel"></nav>');
+  const chnav=document.getElementById('chnav');
+  const chHref=c=>'#k'+c+'-tekster';
+  function chrome(){
+    const x=window.GP&&GP.mode(),c=cur();
+    document.getElementById('appTitle').textContent=x?XN[x]:c+' · '+TITLES[c];
+    const i=NCH.indexOf(c),pv=NCH[i-1],nx=NCH[i+1],t=curTab(),nh=n=>'#k'+n+'-'+t;
+    chnav.innerHTML=(pv?`<a href="${nh(pv)}" data-c="${pv}"><small>‹ Kapittel ${pv}</small><b>${TITLES[pv]}</b></a>`:'<span class="sp"></span>')+
+      (nx?`<a class="nx" href="${nh(nx)}" data-c="${nx}"><small>Kapittel ${nx} ›</small><b>${TITLES[nx]}</b></a>`:'<span class="sp"></span>');
+    chnav.querySelectorAll('a').forEach(a=>a.onclick=e=>{e.preventDefault();location.replace(a.getAttribute('href'))});
+    if(!document.body.classList.contains('home-v'))document.title=(x?XN[x]:'Kap. '+c)+' · '+CFG.name;
+  }
+  // re-draw header + prev/next whenever the guide renders
+  const origRender=window.render;
+  window.render=function(){const r=origRender.apply(this,arguments);try{chrome()}catch(e){}return r};
+
+  // ---------- chapter list ----------
+  const home=document.createElement('div');home.id='home';app.before(home);
+  const ss=(k,v)=>{try{if(v===undefined)return sessionStorage.getItem(KEY+k);if(v===null)sessionStorage.removeItem(KEY+k);else sessionStorage.setItem(KEY+k,v)}catch(e){}};
+  let homeY=+(ss(':y')||0);
+  const leaveHome=()=>{homeY=scrollY;ss(':y',String(homeY));ss(':from','1')};
+  function drawHome(){
+    const st=get(),p=st.prog||{};
+    const col=i=>i%2?'--c:var(--k8);--cs:var(--k8-soft)':'--c:var(--k7);--cs:var(--k7-soft)';
+    const cont=gidOf(st.ch)?`<button class="hm-go" type="button" id="hmGo"><span><b>Fortsett der du slapp</b><span>Kapittel ${st.ch} · ${TITLES[st.ch]} · ${TABN[st.tab]||'Tekstene'}</span></span><i aria-hidden="true">›</i></button>`:'';
+    home.innerHTML=`<div class="hm">
+      ${HOME?`<a class="hm-up" href="${HOME}">‹ Alle apper</a>`:''}
+      <h1>${CFG.name}</h1><p class="hm-sub">${CFG.sub}</p>
+      ${cont}
+      <h2>Kapitler</h2>
+      <ul class="hm-list">${NCH.map((c,i)=>{const q=p[c];let info='Ikke startet',pct=0;
+        if(q&&(q[0]||q[2])){info=`Ord ${q[0]}/${q[1]} · Oppgaver ${q[2]}/${q[3]}`;pct=Math.round(100*(q[0]+q[2])/Math.max(1,q[1]+q[3]))}
+        return `<li><a class="hm-card" href="${chHref(c)}" style="${col(i)}"><span class="hm-n">${c}</span><span class="hm-t"><b>${TITLES[c]}</b><small>${info}</small>${pct?`<span class="hm-bar"><i style="width:${pct}%"></i></span>`:''}</span><span class="chev" aria-hidden="true">›</span></a></li>`}).join('')}</ul>
+      ${window.GP?`<h2>Øv på tvers av kapitlene</h2>
+      <ul class="hm-list">
+        <li><a class="hm-card hm-x" href="#tema-az" style="${col(1)}"><span class="hm-n">A–Å</span><span class="hm-t"><b>Grammatikk A–Å</b><small>Regler og oppgaver for hvert grammatikktema</small></span><span class="chev" aria-hidden="true">›</span></a></li>
+        <li><a class="hm-card hm-x" href="#tema-bygg" style="${col(0)}"><span class="hm-n">✦</span><span class="hm-t"><b>Bygg setningen</b><small>Sett ordene i riktig rekkefølge</small></span><span class="chev" aria-hidden="true">›</span></a></li>
+      </ul>`:''}
+      <p class="hm-foot">${CFG.foot}</p>
+    </div>`;
+    home.querySelectorAll('a.hm-card').forEach(a=>a.addEventListener('click',leaveHome));
+    const g=document.getElementById('hmGo');
+    if(g)g.onclick=()=>{leaveHome();location.hash='#k'+st.ch+'-'+(st.tab||'tekster')};
+  }
+
+  // ---------- routing ----------
+  function showHome(first){
+    if(!first)save();
+    if('speechSynthesis' in window)try{speechSynthesis.cancel()}catch(e){}
+    if(window.GP&&GP.mode())try{window.render()}catch(e){}
+    const back=ss(':from');ss(':from',null);
+    document.body.classList.add('home-v');document.title=CFG.name;
+    drawHome();window.scrollTo(0,back?homeY:0);
+  }
+  function route(){
+    const r=parse(location.hash);
+    if(r.v==='home'){showHome();return}
+    if(r.v==='ch'&&gidOf(r.ch)!==gid){save();location.reload();return}
+    document.body.classList.remove('home-v');
+    if(r.v==='x'){if(window.GP)GP.open(r.x);else showHome();return}
+    goGuide(r.ch,r.tab);chrome();window.scrollTo(0,0);
+  }
+  window.addEventListener('hashchange',route);
+  // back to the list: step back in history if we came from it, else open it fresh
+  const toHome=()=>{save();if(ss(':from'))history.back();else{history.pushState(null,'',location.pathname+location.search);route()}};
+  document.getElementById('appBack').onclick=e=>{e.preventDefault();toHome()};
+
   // remember where you are
-  const save=()=>put({ch:cur(),tab:curTab()});
-  document.addEventListener('click',()=>setTimeout(()=>{save();sel.value=(window.GP&&GP.mode())||String(cur())},0));
+  document.addEventListener('click',()=>setTimeout(save,0));
   window.addEventListener('pagehide',save);
+
+  // practice pages (Grammatikk A–Å, Bygg setningen)
+  const appGo=(c,t)=>{put({ch:c,tab:t});location.hash='#k'+c+'-'+t};
+  if(window.GP)GP.install({appGo,back:{label:'‹ Alle kapitler',go:toHome},onMode:()=>{try{chrome()}catch(e){}}});
+
+  // first view
+  const r=parse(location.hash);
+  if(r.v==='home')showHome(true);
+  else{document.body.classList.remove('home-v');if(r.v==='x'&&window.GP)GP.open(r.x);else{chrome();}}
   save();
-  // grammatikk-pluss: setningsbygger og A–Å
-  const appGo=(c,t)=>{put({ch:c,tab:t});if(gidOf(c)===gid){go(c,t);sel.value=String(c);window.scrollTo(0,0)}else{location.hash='#k'+c+'-'+t;location.reload()}};
-  if(window.GP){GP.install({appGo,onMode:x=>{sel.value=x||String(cur());const l=brand.querySelector('.appch-l');if(l)l.textContent=x?'Øving':'Kapittel'}});if(X0)GP.open(X0)}
-  // link to the beginner app
-  const main=app.querySelector('main');
-  if(main)main.insertAdjacentHTML('beforeend',`${window.GP?'<p class="appfoot gp-foot">Øv mer på tvers av kapitlene: <a href="#tema-az" data-x="az">Grammatikk A–Å</a> · <a href="#tema-bygg" data-x="bygg">Bygg setningen</a></p>':''}<p class="appfoot" style="margin-top:8px">Nivå B1? Prøv <a href="stein-pa-stein.html">Stein på stein</a>. Helt ny i norsk? Prøv <a href="lar-norsk.html">Lær Norsk</a>.</p>`);
-  if(main)main.querySelectorAll('.gp-foot [data-x]').forEach(a=>a.onclick=e=>{e.preventDefault();if(window.GP)GP.open(a.dataset.x)});
 })();
 
 </script>

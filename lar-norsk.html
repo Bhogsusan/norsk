@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="no">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1D4E89">
+<title>Lær Norsk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: single-column app; sticky tab bar; each tab is a "stage". Fjord blue + flag red on ice neutrals. */
+:root{
+  --bg:#EDF2F5; --surface:#FFFFFF; --sunk:#E2EAF0; --ink:#0E2233; --muted:#57697A; --line:#CFDBE4;
+  --fjord:#1D4E89; --fjord-soft:#DCE7F4; --accent:#C8102E; --accent-soft:#F8DDE1;
+  --good:#23794A; --good-soft:#DAF0E3; --bad:#B3261E; --bad-soft:#F7DEDC;
+  --r-s:#1D4E89; --r-v:#C8102E; --r-o:#4F5F6E; --r-t:#9A6200; --r-a:#6B3FA0; --r-q:#00796B;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0A1520; --surface:#12212E; --sunk:#0E1B27; --ink:#E5EDF3; --muted:#8EA2B3; --line:#223747;
+  --fjord:#7DB3F0; --fjord-soft:#173252; --accent:#FF6275; --accent-soft:#3D1820;
+  --good:#5CCB8C; --good-soft:#123323; --bad:#FF7A70; --bad-soft:#3A1715;
+  --r-s:#7DB3F0; --r-v:#FF6275; --r-o:#A9B8C5; --r-t:#F0B44C; --r-a:#B794F0; --r-q:#4DD0C0;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0A1520; --surface:#12212E; --sunk:#0E1B27; --ink:#E5EDF3; --muted:#8EA2B3; --line:#223747;
+  --fjord:#7DB3F0; --fjord-soft:#173252; --accent:#FF6275; --accent-soft:#3D1820;
+  --good:#5CCB8C; --good-soft:#123323; --bad:#FF7A70; --bad-soft:#3A1715;
+  --r-s:#7DB3F0; --r-v:#FF6275; --r-o:#A9B8C5; --r-t:#F0B44C; --r-a:#B794F0; --r-q:#4DD0C0;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,.chip:focus-visible,.card:focus-visible{outline:3px solid var(--fjord);outline-offset:2px}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+
+/* Header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand h1{font-size:22px;font-weight:800}
+.brand small{color:var(--muted);font-size:13px}
+nav.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:12px;overflow-x:auto;max-width:100%}
+nav.tabs a{padding:7px 14px;border-radius:9px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14px;white-space:nowrap}
+nav.tabs a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+nav.tabs a span{font-weight:400;opacity:.75;margin-left:4px;font-size:12px}
+.tempo{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:4px 10px;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--fjord);color:var(--surface)}
+
+main{padding-block:24px 64px}
+.stage-head{display:flex;flex-wrap:wrap;align-items:end;gap:8px 24px;margin-bottom:18px}
+.stage-head h2{font-size:clamp(26px,4vw,36px);font-weight:800}
+.stage-head p{margin:0;color:var(--muted);max-width:60ch}
+.voice-note{font-size:13px;color:var(--muted);background:var(--sunk);border-radius:10px;padding:8px 12px;margin-bottom:16px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px 6px 12px;display:inline-flex;align-items:center;gap:8px;font-size:14px}
+.chip[aria-pressed="true"]{border-color:var(--fjord);background:var(--fjord-soft);color:var(--ink)}
+.chip .en{color:var(--muted);font-size:12px}
+.chip .mini{width:28px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.chip .mini i{display:block;height:100%;background:var(--good)}
+
+/* Learn */
+.learn{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:760px){.learn{grid-template-columns:minmax(0,1fr)}}
+.cardbox{perspective:1200px}
+.card{position:relative;height:300px;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.7,.2,1);cursor:pointer;border-radius:22px}
+.card.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;border:1px solid var(--line)}
+.front{background:var(--surface)}
+.back{background:var(--fjord);color:#fff;transform:rotateY(180deg);border-color:transparent}
+.front .no{font-family:var(--display);font-size:clamp(30px,5vw,44px);font-weight:800;line-height:1.1}
+.front .hint{font-size:12px;color:var(--muted)}
+.back .en{font-family:var(--display);font-size:30px;font-weight:700;line-height:1.15}
+.back .say{font-size:15px;opacity:.85}
+.back .say b{font-weight:600;letter-spacing:.02em}
+.back .ex{font-size:14px;opacity:.9;max-width:34ch}
+.emo{font-size:84px;line-height:1}
+.sw{width:96px;height:96px;border-radius:50%;border:3px solid var(--line);display:block}
+.badge{font-family:var(--display);font-weight:800;font-size:64px;line-height:1;color:var(--fjord)}
+.counter{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin:10px 4px 0;font-variant-numeric:tabular-nums}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+.btn:hover{border-color:var(--fjord)}
+.btn.primary{background:var(--fjord);border-color:var(--fjord);color:var(--surface)}
+.btn.red{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.on{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.btn svg{width:16px;height:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.tile{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;position:relative;min-width:0}
+.tile .emo{font-size:30px}.tile .sw{width:30px;height:30px;border-width:2px}.tile .badge{font-size:26px}
+.tile b{font-size:13px;line-height:1.2;overflow-wrap:anywhere}
+.tile small{font-size:11px;color:var(--muted);line-height:1.2}
+.tile.cur{border-color:var(--fjord);box-shadow:0 0 0 2px var(--fjord-soft)}
+.tile.known::after{content:"";position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--good)}
+.gridhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.gridhead h3{font-size:18px}
+.gridhead span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Quiz */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:24px}
+.scorebar{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;font-variant-numeric:tabular-nums}
+.stat{display:flex;flex-direction:column}
+.stat b{font-family:var(--display);font-size:26px;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.prompt{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0 22px;text-align:center;min-height:170px;justify-content:center}
+.prompt .no{font-family:var(--display);font-size:clamp(30px,5vw,44px);font-weight:800}
+.prompt .q{color:var(--muted);font-size:14px}
+.bigplay{width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center}
+.bigplay svg{width:40px;height:40px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opt{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:14px;font-size:17px;font-weight:600;text-align:left;display:flex;align-items:center;gap:10px;min-width:0}
+.opt kbd{font-family:var(--body);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.opt:hover:not(:disabled){border-color:var(--fjord)}
+.opt.right{border-color:var(--good);background:var(--good-soft);color:var(--good)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.opt:disabled{cursor:default}
+.feedback{min-height:28px;margin-top:14px;font-weight:600;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.feedback.good{color:var(--good)}.feedback.bad{color:var(--bad)}
+
+/* Build */
+.target{font-family:var(--display);font-size:clamp(20px,3vw,26px);font-weight:700;margin:4px 0 18px}
+.answer{min-height:64px;border:2px dashed var(--line);border-radius:16px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.answer.ok{border-style:solid;border-color:var(--good);background:var(--good-soft)}
+.answer.no{border-color:var(--bad)}
+.answer:empty::before{content:"Tap the words below in the right order";color:var(--muted);font-size:14px;padding-left:6px}
+.bank{display:flex;flex-wrap:wrap;gap:8px;min-height:50px}
+.w{border:1px solid var(--line);background:var(--sunk);border-radius:10px;padding:9px 14px;font-size:17px;font-weight:600}
+.answer .w{background:var(--surface)}
+.w.used{visibility:hidden}
+.slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.slot{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.slot .n{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.slot .t{border-radius:10px;padding:8px 12px;font-weight:700;font-size:17px;border:2px solid currentColor;background:var(--surface)}
+.slot .r{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.role-S{color:var(--r-s)}.role-V{color:var(--r-v)}.role-O{color:var(--r-o)}.role-T{color:var(--r-t)}.role-A{color:var(--r-a)}.role-Q{color:var(--r-q)}
+.slot.v2 .t{background:var(--accent-soft)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;margin-top:14px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:currentColor;margin-right:5px;vertical-align:-1px}
+.tip{margin-top:16px;padding:12px 14px;border-radius:12px;background:var(--fjord-soft);font-size:14px}
+.tip b{color:var(--fjord)}
+.rule{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:760px){.rule{grid-template-columns:minmax(0,1fr)}}
+.side h3{font-size:18px;margin-bottom:8px}
+.side p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.v2demo{display:flex;flex-direction:column;gap:10px}
+.v2row{display:flex;flex-wrap:wrap;gap:6px}
+.v2row span{border:2px solid currentColor;border-radius:8px;padding:3px 9px;font-weight:600;font-size:14px;background:var(--surface)}
+.progressdots{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.progressdots i{width:18px;height:6px;border-radius:3px;background:var(--line)}
+.progressdots i.done{background:var(--good)}
+.progressdots i.cur{background:var(--fjord)}
+
+/* Sounds */
+.sounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.snd{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.snd .ch{font-family:var(--display);font-size:42px;font-weight:800;line-height:1;color:var(--fjord)}
+.snd.star .ch{color:var(--accent)}
+.snd p{margin:0;font-size:14px;color:var(--muted)}
+.exs{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.ex{border:1px solid var(--line);background:var(--sunk);border-radius:9px;padding:5px 10px;font-size:14px;display:inline-flex;gap:6px;align-items:baseline}
+.ex b{font-weight:700}.ex small{color:var(--muted);font-size:12px}
+.ex:hover{border-color:var(--fjord)}
+.ex.playing{border-color:var(--accent);background:var(--accent-soft)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion: reduce){.card{transition:none}}
+html{-webkit-text-size-adjust:100%}
+button,a{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media (max-width:640px){
+ .bar{gap:8px 10px;padding-block:8px}
+ .brand h1{font-size:18px}.brand small{display:none}.brand svg{width:26px;height:19px}
+ nav.tabs{order:3;width:100%;justify-content:space-between}
+ nav.tabs a{flex:1 1 auto;text-align:center;padding:8px 4px;font-size:13px}
+ nav.tabs a span{display:none}
+ .tempo{font-size:12px}
+ main{padding-block:14px 72px}
+ .card{height:260px}
+}
+</style>
+
+<header class="top">
+  <div class="wrap bar">
+    <div class="brand">
+      <svg width="34" height="25" viewBox="0 0 22 16" aria-hidden="true"><rect width="22" height="16" fill="#BA0C2F" rx="2"/><path d="M6 0h4v16H6zM0 6h22v4H0z" fill="#fff"/><path d="M7 0h2v16H7zM0 7h22v2H0z" fill="#00205B"/></svg>
+      <div><h1>Lær Norsk</h1><small>Bokmål for beginners</small></div>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#learn">Ord<span>Words</span></a>
+      <a href="#quiz">Quiz</a>
+      <a href="#build">Setninger<span>Sentences</span></a>
+      <a href="#sounds">Lyder<span>Sounds</span></a>
+    </nav>
+    <div class="tempo">Tempo
+      <div class="seg" role="group" aria-label="Speech speed">
+        <button id="slow" type="button">Sakte</button><button id="norm" type="button">Normal</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="voice-note" id="voiceNote" hidden></div>
+
+  <!-- LEARN -->
+  <section id="v-learn" hidden>
+    <div class="stage-head">
+      <h2>Ord <span style="color:var(--muted);font-weight:500">· words</span></h2>
+      <p>Look at the picture, say the word out loud, then tap the card to check the meaning. Mark words you know.</p>
+    </div>
+    <div class="chips" id="learnCats"></div>
+    <div class="learn">
+      <div>
+        <div class="cardbox">
+          <div class="card" id="card" tabindex="0" role="button" aria-label="Flip card">
+            <div class="face front" id="front"></div>
+            <div class="face back" id="back"></div>
+          </div>
+        </div>
+        <div class="counter"><span id="cardPos"></span><span>Space flips · ← → move</span></div>
+        <div class="controls">
+          <button class="btn" id="prev" type="button" aria-label="Previous">←</button>
+          <button class="btn red" id="hear" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>Hør</button>
+          <button class="btn" id="flip" type="button">Snu kortet</button>
+          <button class="btn" id="know" type="button">Jeg kan det</button>
+          <button class="btn primary" id="next" type="button" aria-label="Next">→</button>
+        </div>
+      </div>
+      <div>
+        <div class="gridhead"><h3 id="gridTitle"></h3><span id="gridCount"></span></div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="v-quiz" hidden>
+    <div class="stage-head">
+      <h2>Quiz</h2>
+      <p>Three ways to practise: match the picture, translate the word, or answer by ear.</p>
+    </div>
+    <div class="chips" id="quizModes"></div>
+    <div class="chips" id="quizCats"></div>
+    <div class="panel">
+      <div class="scorebar">
+        <div class="stat"><b id="qRight">0</b><span>Riktig</span></div>
+        <div class="stat"><b id="qTotal">0</b><span>Spørsmål</span></div>
+        <div class="stat"><b id="qStreak">0</b><span>På rad</span></div>
+        <div class="stat"><b id="qBest">0</b><span>Rekord</span></div>
+      </div>
+      <div class="prompt" id="qPrompt"></div>
+      <div class="opts" id="qOpts"></div>
+      <div class="feedback" id="qFb"></div>
+    </div>
+  </section>
+
+  <!-- BUILD -->
+  <section id="v-build" hidden>
+    <div class="stage-head">
+      <h2>Setninger <span style="color:var(--muted);font-weight:500">· sentences</span></h2>
+      <p>Build the Norwegian sentence by tapping the word blocks. After each answer the sentence is colour-coded so you can see its structure.</p>
+    </div>
+    <div class="rule">
+      <div class="panel">
+        <div class="progressdots" id="bDots"></div>
+        <div class="eyebrow">Translate</div>
+        <div class="target" id="bTarget"></div>
+        <div class="answer" id="bAnswer"></div>
+        <div class="bank" id="bBank"></div>
+        <div class="controls">
+          <button class="btn primary" id="bCheck" type="button">Sjekk</button>
+          <button class="btn" id="bHint" type="button">Hint</button>
+          <button class="btn" id="bReset" type="button">Start på nytt</button>
+          <button class="btn red" id="bHear" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>Hør</button>
+          <button class="btn" id="bNext" type="button">Neste →</button>
+        </div>
+        <div id="bResult"></div>
+      </div>
+      <aside class="side panel">
+        <h3>The V2 rule</h3>
+        <p>In a Norwegian statement the verb always sits in <b style="color:var(--r-v)">position 2</b>. If you start with something other than the subject, the subject jumps behind the verb.</p>
+        <div class="v2demo">
+          <div class="v2row"><span class="role-S">Jeg</span><span class="role-V">spiser</span><span class="role-O">fisk</span></div>
+          <div class="v2row"><span class="role-T">I dag</span><span class="role-V">spiser</span><span class="role-S">jeg</span><span class="role-O">fisk</span></div>
+          <div class="v2row"><span class="role-Q">Hva</span><span class="role-V">spiser</span><span class="role-S">du</span>?</div>
+        </div>
+        <p style="margin-top:12px">Yes/no questions put the verb first: <b>Spiser du fisk?</b> “Do you eat fish?” Norwegian has no helper “do”.</p>
+        <div class="legend">
+          <span class="role-S"><i></i>Subject</span><span class="role-V"><i></i>Verb</span><span class="role-O"><i></i>Object / rest</span><span class="role-T"><i></i>Time / place</span><span class="role-A"><i></i>Adverb</span><span class="role-Q"><i></i>Question word</span>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- SOUNDS -->
+  <section id="v-sounds" hidden>
+    <div class="stage-head">
+      <h2>Lyder <span style="color:var(--muted);font-weight:500">· sounds</span></h2>
+      <p>The three extra letters and the spelling patterns that surprise English speakers. Tap any example to hear it.</p>
+    </div>
+    <div class="sounds" id="sounds"></div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- DATA ----------
+// [norsk, english, say-it hint, picture]  picture: emoji | "#hex" colour | "txt:..." text badge
+const CATS = [
+ {id:'hils', no:'Hilsener', en:'Greetings', words:[
+  ['Hei','Hi / Hello','hay','👋','Hei! Jeg heter Anna.'],
+  ['Ha det','Bye','HAH-deh','🚶','Ha det bra! = Bye, take care!'],
+  ['God morgen','Good morning','goo MOR-n','🌅'],
+  ['God natt','Good night','goo NATT','🌙'],
+  ['Takk','Thanks','tahk','🙏'],
+  ['Tusen takk','Thanks a lot','TOO-sen tahk','💐','Literally “a thousand thanks”.'],
+  ['Unnskyld','Sorry / Excuse me','UN-shül','😅'],
+  ['Ja','Yes','yah','👍'],
+  ['Nei','No','nay','🙅'],
+  ['Hvordan går det?','How are you?','VOOR-dan gor deh','🤔','The h in hv is silent.'],
+  ['Bare bra','Just fine','BAH-reh brah','😊'],
+  ['Velkommen','Welcome','vel-KOM-men','🤗'],
+ ]},
+ {id:'tall', no:'Tall', en:'Numbers', words:[
+  ['null','zero','null','txt:0'],['en','one','ehn','txt:1'],['to','two','too','txt:2'],['tre','three','treh','txt:3'],
+  ['fire','four','FEE-reh','txt:4'],['fem','five','fem','txt:5'],['seks','six','seks','txt:6'],
+  ['sju','seven','shoo','txt:7','Also written syv (“süv”).'],['åtte','eight','OT-teh','txt:8'],['ni','nine','nee','txt:9'],
+  ['ti','ten','tee','txt:10'],['tjue','twenty','SHOO-eh','txt:20'],['hundre','hundred','HUN-dreh','txt:100'],
+ ]},
+ {id:'farger', no:'Farger', en:'Colours', words:[
+  ['rød','red','rø','#D7263D','The d is silent.'],['blå','blue','blaw','#2B62C4'],['grønn','green','grønn','#2E9B57'],
+  ['gul','yellow','gool','#F2C230'],['hvit','white','veet','#FFFFFF'],['svart','black','svart','#16181B'],
+  ['oransje','orange','o-RANG-sheh','#F07B22'],['rosa','pink','ROO-sa','#F28CB6'],['brun','brown','broon','#7A4B2A'],
+  ['grå','grey','graw','#8D959C'],['lilla','purple','LIL-la','#7D4CB5'],
+ ]},
+ {id:'mat', no:'Mat', en:'Food & drink', words:[
+  ['brød','bread','brø','🍞'],['ost','cheese','oost','🧀','Brunost, brown cheese, is a Norwegian classic.'],['melk','milk','melk','🥛'],
+  ['kaffe','coffee','KAF-feh','☕'],['vann','water','vann','💧'],['eple','apple','EP-leh','🍎'],
+  ['fisk','fish','fisk','🐟'],['laks','salmon','laks','🍣'],['egg','egg','egg','🥚'],['vaffel','waffle','VAF-fel','🧇'],
+  ['sjokolade','chocolate','sho-ko-LAH-deh','🍫'],['potet','potato','po-TAYT','🥔'],
+ ]},
+ {id:'dyr', no:'Dyr', en:'Animals', words:[
+  ['hund','dog','hun','🐕'],['katt','cat','katt','🐈'],['elg','moose','elg','🫎'],['bjørn','bear','byørn','🐻'],
+  ['rev','fox','rev','🦊'],['hest','horse','hest','🐎'],['ku','cow','koo','🐄'],['sau','sheep','sow','🐑'],
+  ['gris','pig','grees','🐖'],['fugl','bird','fool','🐦','The g is silent.'],['hval','whale','vahl','🐋'],['ulv','wolf','ulv','🐺'],
+ ]},
+ {id:'fam', no:'Familie', en:'Family', words:[
+  ['mor','mother','moor','👩','Casually: mamma.'],['far','father','fahr','👨','Casually: pappa.'],['bror','brother','broor','👦'],
+  ['søster','sister','SØS-ter','👧'],['barn','child','barn','🧒'],['bestemor','grandmother','BES-teh-moor','👵'],
+  ['bestefar','grandfather','BES-teh-fahr','👴'],['venn','friend','venn','🤝'],['kjæreste','boyfriend / girlfriend','SHÆ-res-teh','💑'],
+ ]},
+ {id:'natur', no:'Natur', en:'Nature & home', words:[
+  ['fjell','mountain','fyell','⛰️'],['fjord','fjord','fyoor','🏞️','The d is silent.'],['sjø','sea / lake','shø','🌊'],
+  ['snø','snow','snø','❄️'],['sol','sun','sool','☀️'],['regn','rain','rayn','🌧️'],['skog','forest','skoog','🌲'],
+  ['nordlys','northern lights','NOOR-lees','🌌'],['hus','house','hoos','🏠'],['båt','boat','bawt','⛵'],['hytte','cabin','HÜT-teh','🛖'],
+ ]},
+ {id:'verb', no:'Verb', en:'Verbs', words:[
+  ['er','am / is / are','ær','txt:=','å være (to be). Jeg er, du er, hun er — the same for everyone.'],
+  ['har','have / has','har','🎒','å ha. Jeg har en hund.'],
+  ['spiser','eat(s)','SPEE-ser','🍽️','å spise. Vi spiser middag.'],
+  ['drikker','drink(s)','DRIK-ker','🥤','å drikke. Hun drikker kaffe.'],
+  ['snakker','speak(s)','SNAK-ker','🗣️','å snakke. Jeg snakker norsk.'],
+  ['går','go / walk(s)','gor','🚶','å gå. Vi går på tur.'],
+  ['sover','sleep(s)','SAW-ver','😴','å sove.'],
+  ['leser','read(s)','LEH-ser','📖','å lese.'],
+  ['liker','like(s)','LEE-ker','❤️','å like. Jeg liker ski.'],
+  ['bor','live(s)','boor','🏡','å bo. Jeg bor i Oslo.'],
+  ['heter','am / is called','HEH-ter','🏷️','å hete. Hva heter du?'],
+ ]},
+ {id:'dager', no:'Dager', en:'Days', words:[
+  ['mandag','Monday','MAN-dah','txt:Ma'],['tirsdag','Tuesday','TEESH-dah','txt:Ti'],['onsdag','Wednesday','OONS-dah','txt:On'],
+  ['torsdag','Thursday','TOOSH-dah','txt:To'],['fredag','Friday','FREH-dah','txt:Fr'],['lørdag','Saturday','LØR-dah','txt:Lø'],
+  ['søndag','Sunday','SØN-dah','txt:Sø','Days are written in lower case in Norwegian.'],
+ ]},
+];
+
+// tokens: [text, role]  roles: S subject, V verb, O object/rest, T time/place, A adverb, Q question word
+const SENTS = [
+ {en:'My name is Anna.', t:[['jeg','S'],['heter','V'],['Anna','O']], p:'.', tip:'Norwegians say “I am called”: <b>Jeg heter</b>. Ask with <b>Hva heter du?</b>'},
+ {en:'I speak a little Norwegian.', t:[['jeg','S'],['snakker','V'],['litt','A'],['norsk','O']], p:'.', tip:'Languages are lower case: <b>norsk, engelsk</b>.'},
+ {en:'She drinks coffee.', t:[['hun','S'],['drikker','V'],['kaffe','O']], p:'.', tip:'Verbs never change with the person: <b>jeg drikker, hun drikker, vi drikker</b>.'},
+ {en:'We live in Norway.', t:[['vi','S'],['bor','V'],['i Norge','T']], p:'.', tip:'<b>å bo</b> = to live (somewhere). <b>å leve</b> = to be alive.'},
+ {en:'Today I eat fish.', t:[['i dag','T'],['spiser','V'],['jeg','S'],['fisk','O']], p:'.', tip:'V2 in action: “i dag” takes position 1, so <b>jeg</b> moves behind the verb.'},
+ {en:'I don’t like cheese.', t:[['jeg','S'],['liker','V'],['ikke','A'],['ost','O']], p:'.', tip:'<b>ikke</b> (not) comes right after the verb in a main clause.'},
+ {en:'Where do you live?', t:[['hvor','Q'],['bor','V'],['du','S']], p:'?', tip:'No helper “do”: just question word + verb + subject.'},
+ {en:'He has a dog.', t:[['han','S'],['har','V'],['en hund','O']], p:'.', tip:'<b>en</b> = a (masculine). <b>ei / et</b> are the other two genders.'},
+ {en:'Now we are going home.', t:[['nå','T'],['går','V'],['vi','S'],['hjem','O']], p:'.', tip:'<b>nå</b> (now) is in position 1, so the verb comes next, then <b>vi</b>.'},
+ {en:'Can you help me?', t:[['kan','V'],['du','S'],['hjelpe','O'],['meg','O']], p:'?', tip:'Yes/no question: the verb jumps to the very front.'},
+ {en:'It is cold today.', t:[['det','S'],['er','V'],['kaldt','O'],['i dag','T']], p:'.', tip:'<b>Det er</b> = it is / there is. You will use it constantly.'},
+ {en:'In winter we go skiing.', t:[['om vinteren','T'],['går','V'],['vi','S'],['på ski','O']], p:'.', tip:'<b>å gå på ski</b> = to ski. Norwegians are “født med ski på beina”, born with skis on.'},
+ {en:'What is your name?', t:[['hva','Q'],['heter','V'],['du','S']], p:'?', tip:'Literally “What are-called you?”'},
+ {en:'I love you.', t:[['jeg','S'],['er','V'],['glad i','O'],['deg','O']], p:'.', tip:'<b>Jeg er glad i deg</b> is warm and everyday. <b>Jeg elsker deg</b> is the big, romantic one.'},
+];
+
+const SOUNDS = [
+ {ch:'Æ æ', star:1, d:'Like the “a” in <i>bad</i>, mouth open wide.', ex:[['være','to be'],['lære','to learn'],['vær','weather']]},
+ {ch:'Ø ø', star:1, d:'Say “e” as in <i>bed</i> while rounding your lips. Close to the “u” in <i>fur</i>.', ex:[['snø','snow'],['brød','bread'],['grønn','green']]},
+ {ch:'Å å', star:1, d:'Like the “aw” in <i>law</i>, lips rounded.', ex:[['båt','boat'],['blå','blue'],['på','on']]},
+ {ch:'U u', d:'A tight “oo” with lips pushed forward, as if whistling.', ex:[['du','you'],['hus','house'],['ku','cow']]},
+ {ch:'Y y', d:'Say “ee” but round your lips. No English equivalent.', ex:[['by','city'],['fly','plane'],['hytte','cabin']]},
+ {ch:'Hv', d:'The h is silent: hv sounds like a plain “v”.', ex:[['hva','what'],['hvor','where'],['hvit','white']]},
+ {ch:'Kj', d:'A soft hissing “sh”, like German <i>ich</i>. K before i and y sounds the same.', ex:[['kjøkken','kitchen'],['kino','cinema'],['kirke','church']]},
+ {ch:'Sj · Skj', d:'A full “sh”. Sk before i, y, ei, øy also becomes “sh”.', ex:[['sjø','sea'],['skjorte','shirt'],['ski','ski']]},
+ {ch:'Gj · Hj', d:'Sounds like an English “y”. G before i and y does too.', ex:[['gjerne','gladly'],['hjem','home'],['gi','to give']]},
+ {ch:'Ei · Øy', d:'Diphthongs: ei is like “ay” in <i>say</i>; øy is ø gliding into y.', ex:[['nei','no'],['hei','hi'],['øy','island']]},
+ {ch:'Rs', d:'In Eastern Norwegian (Oslo), r + s melts into “sh”.', ex:[['norsk','Norwegian'],['torsdag','Thursday'],['først','first']]},
+ {ch:'Silent letters', d:'Final d after a long vowel, the t in “det”, and g in some words are dropped.', ex:[['god','good'],['det','it'],['fugl','bird']]},
+];
+
+// ---------- STATE ----------
+const KEY='laer-norsk:v1';
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}};
+let S=Object.assign({known:{},best:0,rate:0.85},load());
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const kid=w=>w[0]+'|'+w[1];
+function pic(p){
+  if(p.startsWith('#'))return `<span class="sw" style="background:${p}"></span>`;
+  if(p.startsWith('txt:'))return `<span class="badge">${esc(p.slice(4))}</span>`;
+  return `<span class="emo">${p}</span>`;
+}
+let toastT;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+
+// ---------- SPEECH ----------
+let voice=null;
+function pickVoice(){
+  if(!('speechSynthesis' in window))return;
+  const vs=speechSynthesis.getVoices();
+  voice=vs.find(v=>/^nb/i.test(v.lang))||vs.find(v=>/^(no|nn)/i.test(v.lang))||null;
+  const n=$('voiceNote');
+  if(vs.length && !voice){n.hidden=false;n.innerHTML='No Norwegian voice found on this device, so audio may sound English. On a Mac: System Settings → Accessibility → Spoken Content → System voice → Manage voices → Norwegian (Nora).'}
+  else n.hidden=true;
+}
+if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+function speak(text,rate){
+  if(!('speechSynthesis' in window)){toast('Speech is not supported in this browser');return}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);u.lang='nb-NO';if(voice)u.voice=voice;u.rate=rate||S.rate;
+  speechSynthesis.speak(u);
+}
+function setRate(r){S.rate=r;save();$('slow').setAttribute('aria-pressed',r<0.8);$('norm').setAttribute('aria-pressed',r>=0.8)}
+$('slow').onclick=()=>setRate(0.6);$('norm').onclick=()=>setRate(0.85);setRate(S.rate);
+
+// ---------- ROUTING ----------
+const VIEWS=['learn','quiz','build','sounds'];
+function route(){
+  let v=location.hash.slice(1);if(!VIEWS.includes(v))v='learn';
+  VIEWS.forEach(x=>{$('v-'+x).hidden=x!==v});
+  document.querySelectorAll('nav.tabs a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+v?'page':'false'));
+  cur=v;if(v==='quiz'&&!Q.q)newQ();
+}
+let cur='learn';
+window.addEventListener('hashchange',route);
+
+// ---------- LEARN ----------
+const L={cat:0,i:0};
+function knownCount(c){return c.words.filter(w=>S.known[kid(w)]).length}
+function renderCats(){
+  $('learnCats').innerHTML=CATS.map((c,i)=>{const k=knownCount(c),pct=k/c.words.length*100;
+    return `<button class="chip" type="button" aria-pressed="${i===L.cat}" data-i="${i}">${c.no}<span class="en">${c.en}</span><span class="mini" title="${k} of ${c.words.length} known"><i style="width:${pct}%"></i></span></button>`}).join('');
+}
+$('learnCats').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;L.cat=+b.dataset.i;L.i=0;renderLearn()};
+function renderCard(){
+  const c=CATS[L.cat],w=c.words[L.i];
+  $('card').classList.remove('flipped');
+  $('front').innerHTML=`${pic(w[3])}<div class="no">${esc(w[0])}</div><div class="hint">Tap to see the meaning</div>`;
+  $('back').innerHTML=`<div class="en">${esc(w[1])}</div><div class="say">Say: <b>${esc(w[2])}</b></div>${w[4]?`<div class="ex">${esc(w[4])}</div>`:''}`;
+  $('cardPos').textContent=`${L.i+1} / ${c.words.length}`;
+  const k=!!S.known[kid(w)];$('know').classList.toggle('on',k);$('know').textContent=k?'✓ Jeg kan det':'Jeg kan det';
+  document.querySelectorAll('#grid .tile').forEach((t,i)=>t.classList.toggle('cur',i===L.i));
+}
+function renderGrid(){
+  const c=CATS[L.cat];
+  $('gridTitle').textContent=`${c.no} · ${c.en}`;
+  $('gridCount').textContent=`${knownCount(c)} / ${c.words.length} known`;
+  $('grid').innerHTML=c.words.map((w,i)=>`<button class="tile${S.known[kid(w)]?' known':''}" type="button" data-i="${i}">${pic(w[3])}<b>${esc(w[0])}</b><small>${esc(w[1])}</small></button>`).join('');
+}
+$('grid').onclick=e=>{const t=e.target.closest('.tile');if(!t)return;L.i=+t.dataset.i;renderCard();speak(CATS[L.cat].words[L.i][0])};
+function renderLearn(){renderCats();renderGrid();renderCard()}
+function move(d){const n=CATS[L.cat].words.length;L.i=(L.i+d+n)%n;renderCard()}
+const flip=()=>{const c=$('card');c.classList.toggle('flipped')};
+$('card').onclick=flip;$('flip').onclick=flip;
+$('prev').onclick=()=>move(-1);$('next').onclick=()=>move(1);
+$('hear').onclick=()=>speak(CATS[L.cat].words[L.i][0]);
+$('know').onclick=()=>{const w=CATS[L.cat].words[L.i],k=kid(w);if(S.known[k])delete S.known[k];else S.known[k]=1;save();renderCats();renderGrid();renderCard()};
+document.addEventListener('keydown',e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if(cur==='learn'){
+    if(e.key===' '&&!/BUTTON/.test(e.target.tagName)||e.key==='Enter'&&e.target.id==='card'){e.preventDefault();flip()}
+    else if(e.key==='ArrowRight')move(1);else if(e.key==='ArrowLeft')move(-1);
+  }else if(cur==='quiz'){
+    const n=+e.key;if(n>=1&&n<=4){const b=$('qOpts').children[n-1];if(b&&!b.disabled)b.click()}
+    else if(e.key==='Enter'&&Q.done){e.preventDefault();newQ()}
+  }
+});
+
+// ---------- QUIZ ----------
+const MODES=[['pic','Bilde → norsk','Picture to word'],['en','Norsk → engelsk','Translate'],['ear','Lytt','Listen']];
+const Q={mode:'pic',cat:-1,q:null,done:false,right:0,total:0,streak:0};
+function renderQuizChips(){
+  $('quizModes').innerHTML=MODES.map(m=>`<button class="chip" type="button" aria-pressed="${Q.mode===m[0]}" data-m="${m[0]}">${m[1]}<span class="en">${m[2]}</span></button>`).join('');
+  $('quizCats').innerHTML=`<button class="chip" type="button" aria-pressed="${Q.cat===-1}" data-c="-1">Alle<span class="en">All</span></button>`+
+    CATS.map((c,i)=>`<button class="chip" type="button" aria-pressed="${Q.cat===i}" data-c="${i}">${c.no}</button>`).join('');
+}
+$('quizModes').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;Q.mode=b.dataset.m;renderQuizChips();newQ()};
+$('quizCats').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;Q.cat=+b.dataset.c;renderQuizChips();newQ()};
+function newQ(){
+  const catIdx=Q.cat>=0?Q.cat:(Math.random()*CATS.length|0);
+  let pool=CATS[catIdx].words;
+  // picture mode: skip the abstract "=" badge
+  if(Q.mode==='pic')pool=pool.filter(w=>w[3]!=='txt:=');
+  const ans=pool[Math.random()*pool.length|0];
+  const others=shuffle(pool.filter(w=>w!==ans&&w[1]!==ans[1])).slice(0,3);
+  Q.q={ans,opts:shuffle([ans,...others])};Q.done=false;
+  const show=Q.mode==='en'?(w=>w[1]):(w=>w[0]);
+  if(Q.mode==='pic')$('qPrompt').innerHTML=`${pic(ans[3])}<div class="q">What is this in Norwegian? <span style="opacity:.7">(${esc(ans[1])})</span></div>`;
+  else if(Q.mode==='en')$('qPrompt').innerHTML=`<div class="no">${esc(ans[0])}</div><div class="q">What does it mean?</div>`;
+  else{$('qPrompt').innerHTML=`<button class="bigplay" type="button" id="qPlay" aria-label="Play word"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button><div class="q">Listen and pick the word you hear</div>`;
+    $('qPlay').onclick=()=>speak(ans[0]);if(Q.total>0)speak(ans[0]);}
+  $('qOpts').innerHTML=Q.q.opts.map((w,i)=>`<button class="opt" type="button" data-i="${i}"><kbd>${i+1}</kbd>${esc(show(w))}</button>`).join('');
+  $('qFb').className='feedback';$('qFb').innerHTML='';
+}
+$('qOpts').onclick=e=>{
+  const b=e.target.closest('.opt');if(!b||Q.done)return;
+  const w=Q.q.opts[+b.dataset.i],ok=w===Q.q.ans;Q.done=true;Q.total++;
+  [...$('qOpts').children].forEach((x,i)=>{x.disabled=true;if(Q.q.opts[i]===Q.q.ans)x.classList.add('right')});
+  if(ok){Q.right++;Q.streak++;if(Q.streak>S.best){S.best=Q.streak;save()}}else{b.classList.add('wrong');Q.streak=0}
+  speak(Q.q.ans[0]);
+  const a=Q.q.ans;
+  $('qFb').className='feedback '+(ok?'good':'bad');
+  $('qFb').innerHTML=`<span>${ok?['Riktig!','Bra!','Flott!','Supert!'][Math.random()*4|0]:'Ikke helt.'} <b>${esc(a[0])}</b> = ${esc(a[1])} · say “${esc(a[2])}”</span><button class="btn primary" type="button" id="qNext">Neste →</button>`;
+  $('qNext').onclick=newQ;$('qNext').focus({preventScroll:true});
+  renderScore();
+};
+function renderScore(){$('qRight').textContent=Q.right;$('qTotal').textContent=Q.total;$('qStreak').textContent=Q.streak;$('qBest').textContent=S.best}
+
+// ---------- BUILD ----------
+const B={i:0,order:[],picked:[],solved:{}};
+const ROLE={S:'Subject',V:'Verb',O:'Object',T:'Time/place',A:'Adverb',Q:'Question'};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const sentText=s=>cap(s.t.map(x=>x[0]).join(' '))+s.p;
+function newB(){const s=SENTS[B.i];B.order=shuffle(s.t.map((_,i)=>i));if(B.order.every((v,i)=>v===i)&&s.t.length>1)B.order.reverse();B.picked=[];renderB()}
+function renderB(){
+  const s=SENTS[B.i];
+  $('bDots').innerHTML=SENTS.map((_,i)=>`<i class="${i===B.i?'cur':B.solved[i]?'done':''}"></i>`).join('');
+  $('bTarget').textContent=s.en;
+  $('bAnswer').className='answer';
+  $('bAnswer').innerHTML=B.picked.map((ti,k)=>`<button class="w" type="button" data-k="${k}">${esc(k===0?cap(s.t[ti][0]):s.t[ti][0])}</button>`).join('');
+  $('bBank').innerHTML=B.order.map(ti=>`<button class="w${B.picked.includes(ti)?' used':''}" type="button" data-t="${ti}">${esc(s.t[ti][0])}</button>`).join('');
+  $('bResult').innerHTML='';
+}
+$('bBank').onclick=e=>{const b=e.target.closest('.w');if(!b||b.classList.contains('used'))return;B.picked.push(+b.dataset.t);renderB();if(B.picked.length===SENTS[B.i].t.length)check()};
+$('bAnswer').onclick=e=>{const b=e.target.closest('.w');if(!b)return;B.picked.splice(+b.dataset.k,1);renderB()};
+function same(a,b){return a===b||SENTS[B.i].t[a][0].toLowerCase()===SENTS[B.i].t[b][0].toLowerCase()}
+function check(){
+  const s=SENTS[B.i];
+  if(B.picked.length<s.t.length){toast('Use all the word blocks first');return}
+  const ok=B.picked.every((ti,i)=>same(ti,i));
+  if(!ok){$('bAnswer').className='answer no';$('bResult').innerHTML=`<div class="feedback bad">Not quite. Tap a placed word to send it back, or use Hint.</div>`;return}
+  B.solved[B.i]=1;$('bAnswer').className='answer ok';speak(sentText(s));
+  const vpos=s.t.findIndex(x=>x[1]==='V');
+  $('bResult').innerHTML=`<div class="feedback good">Riktig! ${esc(sentText(s))}</div>
+   <div class="slots">${s.t.map((x,i)=>`<div class="slot role-${x[1]}${i===vpos?' v2':''}"><span class="n">${i+1}</span><span class="t">${esc(i===0?cap(x[0]):x[0])}</span><span class="r">${ROLE[x[1]]}</span></div>`).join('')}</div>
+   <div class="tip">${vpos===1?'<b>Verb in position 2.</b> ':vpos===0?'<b>Verb first:</b> this is a yes/no question. ':''}${s.tip}</div>`;
+  $('bDots').children[B.i].className='cur done';
+}
+$('bCheck').onclick=check;
+$('bReset').onclick=()=>{B.picked=[];renderB()};
+$('bHint').onclick=()=>{const s=SENTS[B.i];let k=0;while(k<B.picked.length&&same(B.picked[k],k))k++;B.picked=B.picked.slice(0,k);if(k<s.t.length)B.picked.push(k);renderB();if(B.picked.length===s.t.length)check()};
+$('bHear').onclick=()=>speak(sentText(SENTS[B.i]));
+$('bNext').onclick=()=>{B.i=(B.i+1)%SENTS.length;newB()};
+$('bDots').onclick=e=>{const i=[...$('bDots').children].indexOf(e.target);if(i>=0){B.i=i;newB()}};
+
+// ---------- SOUNDS ----------
+$('sounds').innerHTML=SOUNDS.map(s=>`<div class="snd${s.star?' star':''}"><div class="ch">${s.ch}</div><p>${s.d}</p><div class="exs">${s.ex.map(x=>`<button class="ex" type="button" data-w="${esc(x[0])}"><b>${esc(x[0])}</b><small>${esc(x[1])}</small></button>`).join('')}</div></div>`).join('');
+$('sounds').onclick=e=>{const b=e.target.closest('.ex');if(!b)return;document.querySelectorAll('.ex.playing').forEach(x=>x.classList.remove('playing'));b.classList.add('playing');speak(b.dataset.w,Math.min(S.rate,0.75));setTimeout(()=>b.classList.remove('playing'),1200)};
+
+// ---------- BOOT ----------
+renderLearn();renderQuizChips();renderScore();newB();route();
+</script>
